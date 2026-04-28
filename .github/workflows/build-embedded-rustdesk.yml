@@ -1,0 +1,30 @@
+name: Build Embedded RustDesk
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows-embedded:
+    runs-on: windows-latest
+    env:
+      RUSTDESK_EMBED_HBBS: ${{ secrets.RUSTDESK_EMBED_HBBS }}
+      RUSTDESK_EMBED_HBBR: ${{ secrets.RUSTDESK_EMBED_HBBR }}
+      RUSTDESK_EMBED_API: ${{ secrets.RUSTDESK_EMBED_API }}
+      RUSTDESK_EMBED_KEY: ${{ secrets.RUSTDESK_EMBED_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build RustDesk (release)
+        run: cargo build --release --bin rustdesk
+
+      - name: Upload rustdesk.exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustdesk-embedded-windows
+          path: target/release/rustdesk.exe
