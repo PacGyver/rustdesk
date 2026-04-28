@@ -78,6 +78,17 @@ fn install_android_deps() {
 }
 
 fn main() {
+    for (from, to) in [
+        ("RUSTDESK_EMBED_HBBS", "RUSTDESK_EMBEDDED_HBBS"),
+        ("RUSTDESK_EMBED_HBBR", "RUSTDESK_EMBEDDED_HBBR"),
+        ("RUSTDESK_EMBED_API", "RUSTDESK_EMBEDDED_API"),
+        ("RUSTDESK_EMBED_KEY", "RUSTDESK_EMBEDDED_KEY"),
+    ] {
+        println!("cargo:rerun-if-env-changed={from}");
+        if let Ok(value) = std::env::var(from) {
+            println!("cargo:rustc-env={to}={value}");
+        }
+    }
     hbb_common::gen_version();
     install_android_deps();
     #[cfg(all(windows, feature = "inline"))]

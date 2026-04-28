@@ -2052,9 +2052,7 @@ pub fn is_win_10_or_greater() -> bool {
 }
 
 pub fn bootstrap() -> bool {
-    if let Ok(lic) = get_license_from_exe_name() {
-        *config::EXE_RENDEZVOUS_SERVER.write().unwrap() = lic.host.clone();
-    }
+    *config::EXE_RENDEZVOUS_SERVER.write().unwrap() = String::new();
 
     #[cfg(debug_assertions)]
     {
@@ -3604,9 +3602,11 @@ pub fn alloc_console() {
 
 fn get_license() -> Option<CustomServer> {
     let mut lic: CustomServer = Default::default();
-    if let Ok(tmp) = get_license_from_exe_name() {
-        lic = tmp;
-    } else {
+    lic.key = Config::get_option("key");
+    lic.host = Config::get_option("custom-rendezvous-server");
+    lic.api = Config::get_option("api-server");
+    lic.relay = Config::get_option("relay-server");
+    if lic.key.is_empty() || lic.host.is_empty() {
         // for back compatibility from migrating from <= 1.2.1 to 1.2.2
         lic.key = get_reg("Key");
         lic.host = get_reg("Host");
