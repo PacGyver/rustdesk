@@ -54,7 +54,7 @@ So nutzt du sie:
    - `RUSTDESK_EMBED_API`
    - `RUSTDESK_EMBED_KEY`
 2. Unter **Actions → Build Embedded RustDesk → Run workflow** manuell starten.
-3. Nach erfolgreichem Lauf die erzeugten Windows-Artefakte herunterladen (Namen wie im bestehenden Flutter-Build-Workflow, z. B. `rustdesk-unsigned-windows-x86_64`).
+3. Nach erfolgreichem Lauf das Artifact `rustdesk-embedded-windows` herunterladen (`rustdesk.exe`).
 
 #### Wenn der Workflow nicht sichtbar ist
 - GitHub zeigt Workflow-Namen in der Liste primär aus dem **Default-Branch** an.
