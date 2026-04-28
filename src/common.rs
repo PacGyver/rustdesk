@@ -54,6 +54,10 @@ pub type NotifyMessageBox = fn(String, String, String, String) -> dyn Future<Out
 
 // the executable name of the portable version
 pub const PORTABLE_APPNAME_RUNTIME_ENV_KEY: &str = "RUSTDESK_APPNAME";
+const EMBEDDED_HBBS: Option<&str> = option_env!("RUSTDESK_EMBEDDED_HBBS");
+const EMBEDDED_HBBR: Option<&str> = option_env!("RUSTDESK_EMBEDDED_HBBR");
+const EMBEDDED_API: Option<&str> = option_env!("RUSTDESK_EMBEDDED_API");
+const EMBEDDED_KEY: Option<&str> = option_env!("RUSTDESK_EMBEDDED_KEY");
 
 pub const PLATFORM_WINDOWS: &str = "Windows";
 pub const PLATFORM_LINUX: &str = "Linux";
@@ -688,10 +692,11 @@ pub async fn get_rendezvous_server(ms_timeout: u64) -> (String, Vec<String>, boo
     let (mut a, mut b) = get_rendezvous_server_(ms_timeout);
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let (mut a, mut b) = get_rendezvous_server_(ms_timeout).await;
-    #[cfg(windows)]
-    if let Ok(lic) = crate::platform::get_license_from_exe_name() {
-        if !lic.host.is_empty() {
-            a = lic.host;
+    if let Some(host) = EMBEDDED_HBBS {
+        if !host.is_empty() {
+            a = socket_client::check_port(host, config::RENDEZVOUS_PORT);
+            b = b.drain(..).filter(|x| x != &a).collect();
+            return (a, b, true);
         }
     }
     let mut b: Vec<String> = b
@@ -1029,17 +1034,26 @@ pub fn is_setup(name: &str) -> bool {
 }
 
 pub fn get_custom_rendezvous_server(custom: String) -> String {
-    #[cfg(windows)]
-    if let Ok(lic) = crate::platform::windows::get_license_from_exe_name() {
-        if !lic.host.is_empty() {
-            return lic.host.clone();
-        }
-    }
     if !custom.is_empty() {
         return custom;
     }
+    if let Some(host) = EMBEDDED_HBBS {
+        if !host.is_empty() {
+            return host.to_owned();
+        }
+    }
     if !config::PROD_RENDEZVOUS_SERVER.read().unwrap().is_empty() {
         return config::PROD_RENDEZVOUS_SERVER.read().unwrap().clone();
+    }
+    "".to_owned()
+}
+
+#[inline]
+pub fn get_embedded_relay_server() -> String {
+    if let Some(relay) = EMBEDDED_HBBR {
+        if !relay.is_empty() {
+            return relay.to_owned();
+        }
     }
     "".to_owned()
 }
@@ -1063,14 +1077,13 @@ pub fn get_api_server(api: String, custom: String) -> String {
 }
 
 fn get_api_server_(api: String, custom: String) -> String {
-    #[cfg(windows)]
-    if let Ok(lic) = crate::platform::windows::get_license_from_exe_name() {
-        if !lic.api.is_empty() {
-            return lic.api.clone();
-        }
-    }
     if !api.is_empty() {
         return api.to_owned();
+    }
+    if let Some(api) = EMBEDDED_API {
+        if !api.is_empty() {
+            return api.to_owned();
+        }
     }
     let s0 = get_custom_rendezvous_server(custom);
     if !s0.is_empty() {
@@ -1803,12 +1816,6 @@ pub fn decode64<T: AsRef<[u8]>>(input: T) -> Result<Vec<u8>, base64::DecodeError
 }
 
 pub async fn get_key(sync: bool) -> String {
-    #[cfg(windows)]
-    if let Ok(lic) = crate::platform::windows::get_license_from_exe_name() {
-        if !lic.key.is_empty() {
-            return lic.key;
-        }
-    }
     #[cfg(target_os = "ios")]
     let mut key = Config::get_option("key");
     #[cfg(not(target_os = "ios"))]
@@ -1819,6 +1826,11 @@ pub async fn get_key(sync: bool) -> String {
         options.remove("key").unwrap_or_default()
     };
     if key.is_empty() {
+        if let Some(key2) = EMBEDDED_KEY {
+            if !key2.is_empty() {
+                return key2.to_owned();
+            }
+        }
         key = config::RS_PUB_KEY.to_owned();
     }
     key

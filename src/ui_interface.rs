@@ -137,16 +137,15 @@ pub fn show_run_without_install() -> bool {
 
 #[inline]
 pub fn get_license() -> String {
-    #[cfg(windows)]
-    if let Ok(lic) = crate::platform::windows::get_license_from_exe_name() {
+    let key = get_option("key");
+    let host = get_option("custom-rendezvous-server");
+    let api = get_option("api-server");
+    if !key.is_empty() || !host.is_empty() || !api.is_empty() {
         #[cfg(feature = "flutter")]
-        return format!("Key: {}\nHost: {}\nAPI: {}", lic.key, lic.host, lic.api);
+        return format!("Key: {}\nHost: {}\nAPI: {}", key, host, api);
         // default license format is html formed (sciter)
         #[cfg(not(feature = "flutter"))]
-        return format!(
-            "<br /> Key: {} <br /> Host: {} API: {}",
-            lic.key, lic.host, lic.api
-        );
+        return format!("<br /> Key: {} <br /> Host: {} API: {}", key, host, api);
     }
     Default::default()
 }
